@@ -37,3 +37,9 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+rsconnect/
+
+# jupyter checkpoints
+.ipynb_checkpoints
+
+nyc_pluto_22v3_csv/
