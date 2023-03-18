@@ -1,0 +1,175 @@
+---
+title: 'DATA608: Module 3'
+author: 'Donald Butler'
+date: '18 March 2023'
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(plotly)
+library(shiny)
+library(rsconnect)
+```
+
+## Module 3
+
+I have provided you with data about mortality from all 50 states and the District of Columbia. Please access it at https://github.com/charleyferrari/CUNY_DATA608/tree/master/module3/data You are
+invited to gather more data from our provider, the CDC WONDER system, at https://wonder.cdc.gov/ucd-icd10.html.
+
+### Load Data
+
+Load data from the course github.
+
+```{r load_data}
+data <- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv", header = TRUE)
+```
+
+```{r}
+summary(data)
+```
+
+```{r}
+causes <- data %>% 
+  select(ICD.Chapter) %>%
+  distinct() %>%
+  arrange(ICD.Chapter)
+
+years <- data %>%
+  select(Year) %>%
+  distinct() %>%
+  arrange(Year)
+
+states <- data %>%
+  select(State) %>%
+  distinct() %>%
+  arrange()
+```
+
+### Question 1
+
+As a researcher, you frequently compare mortality rates from particular causes across different States. You need a visualization that will let you see (for 2010 only) the crude mortality rate, across all States, from one cause (for example, Neoplasms, which are effectively cancers). Create a visualization that allows you to rank States by crude mortality for each cause of death.
+
+```{r}
+filter_year = 2010
+filter_cat = 'Diseases of the circulatory system'
+
+data %>%
+  filter(Year == filter_year & ICD.Chapter == filter_cat) %>%
+  plot_ly() %>%
+  add_trace(x = ~Crude.Rate, y = ~State, type = 'bar') %>%
+  layout(
+    title = paste(filter_year, filter_cat, sep = ' '),
+    barmode = 'group',
+    xaxis = list(title = 'Mortality Rate per 100k'),
+    yaxis = list(title = 'State', categoryorder = 'total descending')
+  )
+```
+
+```{r shiny1, fig.Height=8, warning=FALSE, error=FALSE}
+
+ui1 <- fluidPage(
+  titlePanel('Mortality Rates by Cause of Death by Year'),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        inputId = 'cause',
+        label = 'Cause of Death:',
+        choices = causes,
+        selected = filter_cat),
+      sliderInput(
+        inputId = 'year',
+        label = 'Year:',
+        min = min(years),
+        max = max(years),
+        step = 1,
+        sep = '',
+        ticks = FALSE,
+        value = filter_year),
+      width = 3),
+    mainPanel(
+      plotlyOutput('plot')
+    )
+  )
+)
+
+server1 <- function(input, output) {
+  output$plot <- renderPlotly({
+    data %>% 
+      filter(Year == input$year & ICD.Chapter == input$cause) %>%
+      plot_ly() %>%
+      add_trace(x = ~Crude.Rate, y = ~State, type = 'bar') %>%
+      layout(
+        title = paste(input$cause, 'by State for',input$year, sep = ' '),
+        barmode = 'group',
+        xaxis = list(title = 'Mortality Rate per 100k'),
+        yaxis = list(title = 'State', categoryorder = 'total descending')
+      )
+  })
+}
+
+shinyApp(ui1, server1)
+
+```
+
+### Question 2
+
+Often you are asked whether particular States are improving their mortality rates (per cause) faster than, or slower than, the national average. Create a visualization that lets your clients see this for themselves for one cause of death at the time. Keep in mind that the national average should be weighted by the national population.
+
+Calculate the national average for each year and cause of death.
+
+```{r}
+data <- data %>%
+  group_by(ICD.Chapter, Year) %>%
+  mutate(USAvg = 100000 * sum(Deaths) / sum(Population))
+```
+
+
+```{r shiny2, fig.Height=8, warning=FALSE, error=FALSE}
+
+ui2 <- fluidPage(
+  titlePanel('Mortality Rates by Cause of Death by Year'),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        inputId = 'cause',
+        label = 'Cause of Death:',
+        choices = causes,
+        selected = filter_cat),
+      selectInput(
+        inputId = 'state',
+        label = 'State:',
+        choices = states),
+      width = 3),
+    mainPanel(
+      plotlyOutput('plot')
+    )
+  )
+)
+
+server2 <- function(input, output) {
+  output$plot <- renderPlotly({
+    data %>% 
+      filter(State == input$state & ICD.Chapter == input$cause) %>%
+      plot_ly() %>%
+      add_trace(x = ~Year, y = ~Crude.Rate, name = input$state, type = 'scatter', mode = 'lines+markers') %>%
+      add_trace(x = ~Year, y = ~USAvg, name = 'US Average', type = 'scatter', mode = 'lines+markers') %>%
+      layout(
+        title = paste(input$cause, sep = ' '),
+        xaxis = list(title = 'Year'),
+        yaxis = list(title = 'Mortality Rate per 100k')
+      )
+  })
+}
+
+shinyApp(ui2, server2)
+
+```
+
