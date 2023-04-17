@@ -13,7 +13,7 @@
 '''
 
 from dash import Dash, dcc, html, Output, Input
-import dash_bootstrap_components as dbc
+#import dash_bootstrap_components as dbc
 import plotly.express as px
 
 import numpy as np
@@ -76,15 +76,15 @@ treelist = np.sort(trees['spc_common'].unique())
 borolist = np.sort(trees['boroname'].unique())
 #%%
 
-
 #%%
-app = Dash(__name__, external_stylesheets = [dbc.themes.SOLAR])
+app = Dash(__name__)
+server = app.server
 
 treeDropdown = dcc.Dropdown(options = [{'label':i, 'value':i} for i in treelist], value = treelist[2])
 boroGraph = dcc.Graph(figure={})
 stewardGraph = dcc.Graph(figure={})
 
-app.layout = dbc.Container([
+app.layout = html.Div([
     dcc.Markdown('### NYC Street Tree Health'),
     treeDropdown,
     boroGraph,
@@ -111,8 +111,13 @@ def update_output(treename):
 
 #%%
 
+#%%
+
+
+#%%
 
 #%%
 if __name__ == '__main__':
     app.run_server()
+
 #%%
