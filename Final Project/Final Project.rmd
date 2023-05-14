@@ -1,0 +1,21 @@
+---
+title: 'DATA608: Final Project'
+author: 'Donald Butler'
+date: '12 May 2023'
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+## PowerBI Visualization
+
+I work for Carrols Corporation which is the largest Burger King franchisee in the US. In my role, I am responsible for managing the Windows devices and other networked systems in each of our 1000 restaurants.
